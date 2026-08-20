@@ -1,0 +1,95 @@
+services:
+  # mysql 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    # 设置字符集utf8mb4, 表名大小写不敏感
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --lower_case_table_names=1
+    environment:
+      # 时区上海
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: flash_sale
+    ports:
+      - "3306:3306"
+    volumes:
+      - data-volume:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p123456"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  # migration 版本控制
+  migration:
+    image: migrate/migrate:latest
+    container_name: migration
+    networks:
+      - app-network
+    volumes:
+      - ./deploy/migration:/migrations
+    command:
+      - -path=/migrations
+      - -database=${DB_URL_FOR_MIGRATION}
+      - up
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # redis 缓存
+  redis:
+    image: redis:8.8.0-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    environment:
+      # 时区上海
+      TZ: Asia/Shanghai
+    command: >
+      redis-server 
+      --appendonly yes
+      --requirepass 123456
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+  # prometheus监控
+  # prometheus:
+  #   image: prom/prometheus:v2.28.1
+  #   container_name: prometheus
+  #   environment:
+  #     TZ: Asia/Shanghai
+  #   volumes:
+  #     - ./deploy/prometheus/server/prometheus.yml:/etc/prometheus/prometheus.yml
+  #     - ./data/prometheus/data:/prometheus
+  #   command:
+  #     - "--config.file=/etc/prometheus/prometheus.yml"
+  #     - "--storage.tsdb.path=/prometheus"
+  #   restart: always
+  #   user: root
+  #   ports:
+  #     - 9090:9090
+  #   networks:
+  #     - app-network
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.0.0/16
+
+volumes:
+  data-volume:
+  redis-data:

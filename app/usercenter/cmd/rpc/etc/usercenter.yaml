@@ -1,0 +1,30 @@
+Name: usercenter.rpc
+ListenOn: 0.0.0.0:8080
+Mode: dev
+# Etcd:
+#   Hosts:
+#     - 127.0.0.1:2379
+#   Key: usercenter.rpc
+
+#Monitoring
+# Prometheus:
+#   Host: 0.0.0.0
+#   Port: 4009
+#   Path: /metrics
+
+JwtAuth:
+  AccessSecret: ae0536f9-6450-4606-8e13-5a19ed505da0
+  AccessExpire: 31536000
+
+Redis:
+  Host: 127.0.0.1:6379
+  Type: node
+  Pass: "123456"
+  Key: usercenter-rpc
+
+DB:
+  DataSource: root:123456@tcp(127.0.0.1:3306)/flash_sale_usercenter?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai
+
+Cache:
+  - Host: 127.0.0.1:6379
+    Pass: "123456"
